@@ -1,6 +1,7 @@
 #include<bits/stdc++.h>
 using namespace std;
 
+// for debuging
 void print_resp(string s){
         for(char &c:s){
             if(c=='\n') cout<<"\\n";
@@ -10,21 +11,86 @@ void print_resp(string s){
         cout<<endl;
 };
 
-// deserialize block string
+bool isInt(string &s){
+    if(s.size()&&s[0]=='-'){
+        for(int i=1;i<s.size();i++)
+        if(!isdigit(s[i])) return false;
+    }
+    else{
+        for(auto &i:s){
+            if(!isdigit(i)) return false;
+        }
+    }
+    return true;
+}
+
+// parsing the input from user into array of strings
+void parse(string &s, vector<string>&res){
+    string token="";
+    bool quotes=false;
+    for(char &c:s){
+        if(c==' '){
+            if(quotes){
+                token+=c;
+            }
+            else if(token.size()){
+                res.push_back(token);
+                token.clear();
+            }
+        }
+        else if(c=='\"'){
+            if(quotes){
+                if(token.size()){
+                    res.push_back(token);
+                    token.clear();
+                }
+                quotes=false;
+            }
+            else quotes=true;
+        }
+        else 
+        token+=c;
+    }
+    if(token.size()) res.push_back(token);
+}
+
+
+// deserialize block string , return empty string in case of syntax error
 string deserialize(string data)
 {
-    if (data.front() != '$')
-    {
-        return "";
-    }
+    char first = data.front();
+    string result="";
     size_t p = 0;
-    p = data.find("\r\n", 1);
-    int size = stoi(data.substr(1, p - 1));
-    p += 2;
-    string result = data.substr(p,size);
-    p+=size;
-    if (p!=data.size()-2||data[p]!='\r'||data[p+1]!='\n'){
-        return "";
+    switch (first)
+    {
+    case '+':
+        p = data.find("\r\n", 1);
+        result = data.substr(1, p - 1);
+        break;
+    
+    case '-':
+        p = data.find("\r\n", 1);
+        result = "(error) ";
+        result += data.substr(1, p - 1);
+        break;
+    
+    case ':':
+        p = data.find("\r\n", 1);
+        result = "(integer) ";
+        result += data.substr(1, p - 1);
+        break;
+
+    case '$':
+        if(data=="$-1\r\n") return "(nil)";
+        p = data.find("\r\n", 1);
+        int size = stoi(data.substr(1, p - 1));
+        p += 2;
+        result = data.substr(p,size);
+        p+=size;
+        if (p!=data.size()-2||data[p]!='\r'||data[p+1]!='\n'){
+            result = "";
+        }
+        break;
     }
     return result;
 }
@@ -64,7 +130,7 @@ int deserialize_arr(string &data, vector<string> &commands)
     return 0;
 }
 
-// type  0=simple, 1=block, -1=error
+// type  0=simple, 1=block, -1=error , -2=empty
 string serialize(string &data, int type = 1)
 {
     string result = "";
@@ -82,6 +148,9 @@ string serialize(string &data, int type = 1)
         result = "-" + data + "\r\n";
         break;
 
+    case -2:
+        result = "$-1\r\n";
+        break;
     default:
         break;
     }
@@ -90,7 +159,8 @@ string serialize(string &data, int type = 1)
 
 string serialize(int data)
 {
-    return ":" + to_string(data) + "\r\n";
+    string result = ":" + to_string(data) + "\r\n";
+    return result;
 }
 
 string serialize(vector<string> &data)

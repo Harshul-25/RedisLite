@@ -5,6 +5,8 @@
 #include <unistd.h>     // For read
 #include <arpa/inet.h>
 
+const int PORT=6379;
+
 // //The way RESP is used in Redis as a request-response protocol is the following:
 // Clients send commands to a Redis server as a RESP Array of Bulk Strings.
 // The server replies with one of the RESP types according to the command implementation.
@@ -51,7 +53,6 @@ string getMsg(int &client)
             response.append(buffer.cbegin(), buffer.cbegin()+bytesReceived);
         }
     } while (bytesReceived == BUF_LENGTH);
-    
     string Msg = deserialize(response);
     return Msg;
 }
@@ -60,21 +61,11 @@ void process(string &line, int &client)
 {
     // cout << "command recieved: " << line << endl;
     vector<string> data;
-    stringstream stream(line);
-    string token;
-    while (getline(stream, token, ' '))
-    {
-        // store token string in the vector
-        data.push_back(token);
-    }
+    parse(line,data);
     string req = serialize(data);
-
     sendReq(client,req);
     string response = getMsg(client);
     cout<<response<<endl;
-//     cout << "RESP representation: ";
-//     print_resp(req);
-//     cout << endl;
 }
 
 int main()
@@ -90,7 +81,7 @@ int main()
     sockaddr_in sockaddr;
     sockaddr.sin_family = AF_INET;
     sockaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    sockaddr.sin_port = htons(6379);
+    sockaddr.sin_port = htons(PORT);
 
     // Connect with the server
     int status = connect(client, (struct sockaddr *)&sockaddr, sizeof(sockaddr));

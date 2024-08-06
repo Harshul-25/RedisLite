@@ -6,4 +6,11 @@ https://stackoverflow.com/questions/56476251/send-big-string-into-socket
 https://stackoverflow.com/questions/18670807/sending-and-receiving-stdstring-over-socket
 https://codingchallenges.fyi/challenges/challenge-redis/
 https://www.geeksforgeeks.org/multithreading-in-cpp/
+https://stackoverflow.com/questions/20340750/pass-multiple-arguments-into-stdthread
 https://www.geeksforgeeks.org/std-mutex-in-cpp/
+https://betterprogramming.pub/4-easy-tips-on-using-threads-and-mutexes-in-c-566eb2927152
+
+
+systemctl can be used to start/stop , enable/disable redis service/server
+
+https://stackoverflow.com/questions/35252119/stdlock-guard-example-explanation-on-why-it-works
