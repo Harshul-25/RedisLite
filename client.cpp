@@ -59,7 +59,6 @@ string getMsg(int &client)
 
 void process(string &line, int &client)
 {
-    // cout << "command recieved: " << line << endl;
     vector<string> data;
     parse(line,data);
     string req = serialize(data);

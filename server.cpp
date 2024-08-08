@@ -39,6 +39,23 @@ bool isExpired(Entry &e){
     return chrono::system_clock::now() > e.exptime;
 }
 
+bool exists(string &key,Entry &value){
+    if(cache.count(key)==0){                //check if the key exists
+        return false;
+    }
+    else {
+        Entry t(cache[key]);
+        if(t.flag&&isExpired(t)){          //checking for expiry
+            cache.erase(key);
+            return false;
+        }
+        else{
+            value.set(t);
+            return true;
+        }
+    }
+}
+
 
 // helper function to send response to client
 // type  0=simple, 1=block, -1=error , -2=empty , 2=Int
@@ -67,7 +84,7 @@ void sendResponse(int &connection, string data, int type=1)
         data_size -= bytes_sent;
     }
 
-    // cout << "Response sent. Total bytes: " << bytes_sent << endl;
+    cout << "Response sent. Total bytes: " << bytes_sent << endl;
 }
 
 // helper function to read command from client
@@ -124,7 +141,7 @@ void handleSet(int &connection, vector<string>&command){
             else
             seconds = stoi(command[4]);
         }
-        std::lock_guard<std::mutex> guard(myMutex);
+        lock_guard<mutex> guard(myMutex);
         if(seconds!=-1){
             Entry e(value,seconds);
             cache[key].set(e);
@@ -144,20 +161,14 @@ void handleGet(int &connection, vector<string>&command){
         sendResponse(connection,"ERR wrong number of arguments for "+operation+" command",-1);
     }
     else{
-        std::lock_guard<std::mutex> guard(myMutex);
+        lock_guard<mutex> guard(myMutex);
         string key = command[1];
-        if(cache.count(key)==0){                //check if the key exists
+        Entry val;
+        if(!exists(key,val)){
             sendResponse(connection,"",-2);
         }
-        else {
-            Entry t(cache[key]);
-            if(t.flag&&isExpired(t)){          //checking for expiry
-                cache.erase(key);
-                sendResponse(connection,"",-2);
-            }
-            else{
-                sendResponse(connection,t.data);
-            }
+        else{
+            sendResponse(connection,val.data);
         }
     }
 }
@@ -166,9 +177,10 @@ void handleExist(int &connection,vector<string>&command){
     if(command.size()!=2){
         sendResponse(connection,"ERR wrong number of arguments for "+command[0]+" command",-1);
     }
-    std::lock_guard<std::mutex> guard(myMutex);
+    lock_guard<mutex> guard(myMutex);
     string key = command[1];
-    if(cache.count(key))                //check if the key exists
+    Entry val;
+    if(exists(key,val))
         sendResponse(connection,"1",2);
     else
         sendResponse(connection,"0",2);
@@ -178,12 +190,13 @@ void handleDel(int &connection,vector<string>&command){
     if(command.size()!=2){
         sendResponse(connection,"ERR wrong number of arguments for "+command[0]+" command",-1);
     }
-    std::lock_guard<std::mutex> guard(myMutex);
+    lock_guard<mutex> guard(myMutex);
     string key = command[1];
-    if(cache.count(key)){               //check if the key exists
+    Entry val;
+    if(exists(key,val)){
         cache.erase(key);
         sendResponse(connection,"1",2);
-    }                
+    }
     else
         sendResponse(connection,"0",2);
 }
@@ -193,9 +206,10 @@ void handleInDec(int &connection,vector<string>&command){
         sendResponse(connection,"ERR wrong number of arguments for "+command[0]+" command",-1);
     }
     string op = command.front();
+    lock_guard<mutex> guard(myMutex);
     string key = command[1];
-    std::lock_guard<std::mutex> guard(myMutex);
-    if(cache.count(key)==0){
+    Entry val;
+    if(!exists(key,val)){
         if(op=="INCR"){
             cache[key].data="1";
             sendResponse(connection,"1",2);
@@ -206,17 +220,16 @@ void handleInDec(int &connection,vector<string>&command){
         }
         return;
     }
-    Entry t(cache[key]);
-    if(!isInt(t.data)){
+    if(!isInt(val.data)){
         sendResponse(connection,"ERR value is not an integer",-1);
          return;
     }
-    int no = stoi(t.data);
+    int no = stoi(val.data);
     if(op=="INCR") no++;
     else no--;
-    t.data = to_string(no);
-    cache[key].set(t);
-    sendResponse(connection,t.data,2);
+    val.data = to_string(no);
+    cache[key].data = val.data;
+    sendResponse(connection,val.data,2);
 }
 
 void handleConnection(int connection)

@@ -14,3 +14,7 @@ https://betterprogramming.pub/4-easy-tips-on-using-threads-and-mutexes-in-c-566e
 systemctl can be used to start/stop , enable/disable redis service/server
 
 https://stackoverflow.com/questions/35252119/stdlock-guard-example-explanation-on-why-it-works
+https://en.cppreference.com/w/cpp/thread/recursive_mutex
+https://courses.cs.washington.edu/courses/cse374/18sp/lectures/25-concurrency-2.html#:~:text=If%20one%20function%20that%20locks,the%20second%20function%20finishes%20executing.
+
+https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#main
